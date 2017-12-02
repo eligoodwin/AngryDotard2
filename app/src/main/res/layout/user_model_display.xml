@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="250px"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/userProfilePic"
+        android:layout_width="125px"
+        android:layout_height="125px"
+        android:layout_weight=".25"/>
+    <TextView
+        android:id="@+id/finalUsername"
+        android:layout_width="match_parent"
+        android:paddingLeft="4dp"
+        android:layout_height="125px"
+        android:text="view tweets"
+        android:layout_weight=".75"
+        android:onClick="onClick"
+        android:textSize="24sp"/>
+
+</LinearLayout>
