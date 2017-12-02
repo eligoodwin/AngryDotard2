@@ -113,53 +113,58 @@ public class SearchForUsers extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 //if the user is not in the data base
-                final String targetuser = targetUsername;
                 if(targetUsername == null){
                     Toast.makeText(SearchForUsers.this, "Need to search for a user first", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
-                if(!userIsInDatabase(targetuser)){
+                if(!userIsInDatabase(targetUsername)){
                     Toast.makeText(SearchForUsers.this, "User does not exist in database, adding", Toast.LENGTH_SHORT).show();
-                    //make an http request and then print the result to the dialog will add results to database
-                    OkHttpClient client = new OkHttpClient.Builder()
-                            .connectTimeout(100, java.util.concurrent.TimeUnit.SECONDS) //prevent timeouts due the nature of the request
-                            .readTimeout(100, java.util.concurrent.TimeUnit.SECONDS)
-                            .build();
+//                    //make an http request and then print the result to the dialog will add results to database
+//                    OkHttpClient client = new OkHttpClient.Builder()
+//                            .connectTimeout(100, java.util.concurrent.TimeUnit.SECONDS) //prevent timeouts due the nature of the request
+//                            .readTimeout(100, java.util.concurrent.TimeUnit.SECONDS)
+//                            .build();
+//
+//                    //make the request
+//                    final Request request = new Request.Builder()
+//                            .header("content-type", "application/json; charset=utf-8")
+//                            .url(magaURL + targetuser)
+//                            .build();
+//                    client.newCall(request).enqueue(new okhttp3.Callback() {
+//                        @Override
+//                        public void onFailure(Call call, IOException e) {
+//                            Log.d(TAG, "Something is not right...");
+//                            e.printStackTrace();
+//                        }
+//
+//                        @Override
+//                        public void onResponse(Call call, Response response) throws IOException {
+//                            try{
+//                                String theResponse = response.body().string();
+//                                int responseCode = response.code();
+//                                //let user know that model was created for the user
+//                                Log.d(TAG, "Response body: " + theResponse + " response code: " + responseCode);
+//                                JSONObject theTweets = new JSONObject(theResponse);
+//                                Gson convertResponseToObject = new Gson();
+//                                //create new model entry
+//                                UserModel retrievedModel = convertResponseToObject.fromJson(theResponse, UserModel.class);
+//                                //and previously retrieved data
+//                                Log.d(TAG, "User model: " + retrievedModel.toString());
+//                                //inert into database
+//                                addEntries(retrievedModel);
+//                            }
+//                            catch(JSONException e2){
+//                                e2.printStackTrace();
+//                            }
+//                        }
+//                    });
+                    //send off user name to service
+                    Intent createMarkovTweets = new Intent(SearchForUsers.this, GetUserDataIntentService.class);
+                    createMarkovTweets.putExtra("username", targetUsername);
+                    startService(createMarkovTweets);
 
-                    //make the request
-                    final Request request = new Request.Builder()
-                            .header("content-type", "application/json; charset=utf-8")
-                            .url(magaURL + targetuser)
-                            .build();
-                    client.newCall(request).enqueue(new okhttp3.Callback() {
-                        @Override
-                        public void onFailure(Call call, IOException e) {
-                            Log.d(TAG, "Something is not right...");
-                            e.printStackTrace();
-                        }
 
-                        @Override
-                        public void onResponse(Call call, Response response) throws IOException {
-                            try{
-                                String theResponse = response.body().string();
-                                int responseCode = response.code();
-                                //let user know that model was created for the user
-                                Log.d(TAG, "Response body: " + theResponse + " response code: " + responseCode);
-                                JSONObject theTweets = new JSONObject(theResponse);
-                                Gson convertResponseToObject = new Gson();
-                                //create new model entry
-                                UserModel retrievedModel = convertResponseToObject.fromJson(theResponse, UserModel.class);
-                                //and previously retrieved data
-                                Log.d(TAG, "User model: " + retrievedModel.toString());
-                                //inert into database
-                                addEntries(retrievedModel);
-                            }
-                            catch(JSONException e2){
-                                e2.printStackTrace();
-                            }
-                        }
-                    });
                 }
                 else{
                     Toast.makeText(SearchForUsers.this, "User already exists in database", Toast.LENGTH_SHORT).show();

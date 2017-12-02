@@ -20,6 +20,7 @@
         <activity android:name=".ViewModels" />
         <activity android:name=".DisplayMarkovTweets"
             android:noHistory="true"/>
+        <service android:name=".GetUserDataIntentService"/>
     </application>
 
 </manifest>
