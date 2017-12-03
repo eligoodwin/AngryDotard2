@@ -25,44 +25,33 @@ import okhttp3.Response;
 
 /**
  * Created by eligoodwin on 12/2/17.
- * Used to crate
+ * Used to create requests for generated tweets
  */
 
 public class GetUserDataIntentService extends IntentService {
     private static final String TAG = GetUserDataIntentService.class.getSimpleName();
     private final String magaURL = "https://magabot-183518.appspot.com/tweets/";
-
-    private SQLiteDatabase sqLiteDatabase;
-    private MarkovUserDB  markovUserDB;
+    private String username;
 
     public GetUserDataIntentService(){
         super("GetUserDataIntentService");
         setIntentRedelivery(true);
-
-
     }
 
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         //set up the database
-        markovUserDB = new MarkovUserDB(this);
-        try {
-            sqLiteDatabase = markovUserDB.getReadableDatabase();
-            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
 
-        }catch(SQLException e3){
-            e3.printStackTrace();
-        }
         //get the user name string
-        String username = intent.getStringExtra("username");
+        username = intent.getStringExtra("username");
 
         //make the request and add the data to the database
-        getGeneratedTweets(username);
+        getGeneratedTweets();
 
     }
 
-    private void getGeneratedTweets(String targetUser) {
+    private void getGeneratedTweets() {
         OkHttpClient client = new OkHttpClient.Builder()
                 .connectTimeout(100, TimeUnit.SECONDS) //prevent timeouts due the nature of the request
                 .readTimeout(100, TimeUnit.SECONDS)
@@ -71,7 +60,7 @@ public class GetUserDataIntentService extends IntentService {
         //make the request
         final Request request = new Request.Builder()
                 .header("content-type", "application/json; charset=utf-8")
-                .url(magaURL + targetUser)
+                .url(magaURL + username)
                 .build();
         client.newCall(request).enqueue(new Callback() {
             @Override
@@ -85,7 +74,6 @@ public class GetUserDataIntentService extends IntentService {
                 try {
                     String theResponse = response.body().string();
                     int responseCode = response.code();
-                    //let user know that model was created for the user
                     Log.d(TAG, "Response body: " + theResponse + " response code: " + responseCode);
                     JSONObject theTweets = new JSONObject(theResponse);
                     Gson convertResponseToObject = new Gson();
@@ -102,18 +90,29 @@ public class GetUserDataIntentService extends IntentService {
         });
     }
 
-    public void addEntries(UserModel userToAdd){
+    //adds users to the database--need to refactor after modfying the database
+    private void addEntries(UserModel userToAdd){
         //add the username
         ContentValues vals = new ContentValues();
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB  markovUserDB;
 
-        //add the list values
-        List<String> tweetsToAdd = userToAdd.getMarkovTweets();
-        for(int i = 0; i < tweetsToAdd.size(); ++i){
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_USER_NAME, userToAdd.getUsername());
-            //add the profile pic url
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL, userToAdd.getUserProfilePicUrl());
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_TWEET, tweetsToAdd.get(i));
-            sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
+        markovUserDB = new MarkovUserDB(this);
+        try {
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
+            List<String> tweetsToAdd = userToAdd.getMarkovTweets();
+            for(int i = 0; i < tweetsToAdd.size(); ++i){
+                vals.put(DBContract.MarkovContract.COLUMN_NAME_USER_NAME, userToAdd.getUsername());
+                //add the profile pic url
+                vals.put(DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL, userToAdd.getUserProfilePicUrl());
+                vals.put(DBContract.MarkovContract.COLUMN_NAME_TWEET, tweetsToAdd.get(i));
+                sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
+            }
+            sqLiteDatabase.close();
+
+        }catch(SQLException e3){
+            e3.printStackTrace();
         }
     }
 }

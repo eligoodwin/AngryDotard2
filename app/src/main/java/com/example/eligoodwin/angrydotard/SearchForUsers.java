@@ -50,8 +50,6 @@ public class SearchForUsers extends AppCompatActivity {
     //set up variables
     private String targetUsername;
     private TwitterSession currentUserSession;
-    private String targetUserprofilePic;
-    private final String magaURL = "https://magabot-183518.appspot.com/tweets/";
 
     //set up db
     private SQLiteDatabase sqLiteDatabase;
@@ -120,51 +118,9 @@ public class SearchForUsers extends AppCompatActivity {
 
                 if(!userIsInDatabase(targetUsername)){
                     Toast.makeText(SearchForUsers.this, "User does not exist in database, adding", Toast.LENGTH_SHORT).show();
-//                    //make an http request and then print the result to the dialog will add results to database
-//                    OkHttpClient client = new OkHttpClient.Builder()
-//                            .connectTimeout(100, java.util.concurrent.TimeUnit.SECONDS) //prevent timeouts due the nature of the request
-//                            .readTimeout(100, java.util.concurrent.TimeUnit.SECONDS)
-//                            .build();
-//
-//                    //make the request
-//                    final Request request = new Request.Builder()
-//                            .header("content-type", "application/json; charset=utf-8")
-//                            .url(magaURL + targetuser)
-//                            .build();
-//                    client.newCall(request).enqueue(new okhttp3.Callback() {
-//                        @Override
-//                        public void onFailure(Call call, IOException e) {
-//                            Log.d(TAG, "Something is not right...");
-//                            e.printStackTrace();
-//                        }
-//
-//                        @Override
-//                        public void onResponse(Call call, Response response) throws IOException {
-//                            try{
-//                                String theResponse = response.body().string();
-//                                int responseCode = response.code();
-//                                //let user know that model was created for the user
-//                                Log.d(TAG, "Response body: " + theResponse + " response code: " + responseCode);
-//                                JSONObject theTweets = new JSONObject(theResponse);
-//                                Gson convertResponseToObject = new Gson();
-//                                //create new model entry
-//                                UserModel retrievedModel = convertResponseToObject.fromJson(theResponse, UserModel.class);
-//                                //and previously retrieved data
-//                                Log.d(TAG, "User model: " + retrievedModel.toString());
-//                                //inert into database
-//                                addEntries(retrievedModel);
-//                            }
-//                            catch(JSONException e2){
-//                                e2.printStackTrace();
-//                            }
-//                        }
-//                    });
-                    //send off user name to service
                     Intent createMarkovTweets = new Intent(SearchForUsers.this, GetUserDataIntentService.class);
                     createMarkovTweets.putExtra("username", targetUsername);
                     startService(createMarkovTweets);
-
-
                 }
                 else{
                     Toast.makeText(SearchForUsers.this, "User already exists in database", Toast.LENGTH_SHORT).show();
@@ -194,7 +150,6 @@ public class SearchForUsers extends AppCompatActivity {
                     @Override
                     public void success(Result<User> result) {
                         targetUsername = result.data.screenName;
-                        targetUserprofilePic =result.data.profileImageUrlHttps;
                         //make list view
                         ListView feedView = (ListView)findViewById(R.id.userFeed);
                         UserTimeline userTimeline = new UserTimeline.Builder()
@@ -213,21 +168,6 @@ public class SearchForUsers extends AppCompatActivity {
                 });
     }
 
-    //add entries to the database
-    public void addEntries(UserModel userToAdd){
-        //add the username
-        ContentValues vals = new ContentValues();
-
-        //add the list values
-        List<String> tweetsToAdd = userToAdd.getMarkovTweets();
-        for(int i = 0; i < tweetsToAdd.size(); ++i){
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_USER_NAME, userToAdd.getUsername());
-            //add the profile pic url
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL, userToAdd.getUserProfilePicUrl());
-            vals.put(DBContract.MarkovContract.COLUMN_NAME_TWEET, tweetsToAdd.get(i));
-            sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
-        }
-    }
 
     //test if username is in database
     private boolean userIsInDatabase(String username){
