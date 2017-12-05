@@ -1,6 +1,7 @@
 package com.example.eligoodwin.angrydotard;
 
 import android.app.IntentService;
+import android.app.Notification;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.SQLException;
@@ -110,9 +111,19 @@ public class GetUserDataIntentService extends IntentService {
                 sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
             }
             sqLiteDatabase.close();
+            sendNotification();
 
         }catch(SQLException e3){
             e3.printStackTrace();
         }
+    }
+
+    private void sendNotification() {
+        Notification.Builder notificationBuilder = new Notification.Builder(this)
+                .setSmallIcon(R.mipmap.ic_launcher)
+                .setContentTitle("User model was added")
+                .setContentText(username + " is now in the database!");
+        Notification notification = notificationBuilder.build();
+        startForeground(123, notification);
     }
 }
