@@ -2,6 +2,7 @@ package com.example.eligoodwin.angrydotard;
 
 import android.app.IntentService;
 import android.app.Notification;
+import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.SQLException;
@@ -42,8 +43,6 @@ public class GetUserDataIntentService extends IntentService {
 
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
-        //set up the database
-
         //get the user name string
         username = intent.getStringExtra("username");
 
@@ -84,6 +83,8 @@ public class GetUserDataIntentService extends IntentService {
                     Log.d(TAG, "User model: " + retrievedModel.toString());
                     //inert into database
                     addEntries(retrievedModel);
+                    sendNotification();
+
                 } catch (JSONException e2) {
                     e2.printStackTrace();
                 }
@@ -111,7 +112,6 @@ public class GetUserDataIntentService extends IntentService {
                 sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
             }
             sqLiteDatabase.close();
-            sendNotification();
 
         }catch(SQLException e3){
             e3.printStackTrace();
@@ -120,10 +120,11 @@ public class GetUserDataIntentService extends IntentService {
 
     private void sendNotification() {
         Notification.Builder notificationBuilder = new Notification.Builder(this)
-                .setSmallIcon(R.mipmap.ic_launcher)
+                .setSmallIcon(R.drawable.angry_idiot)
                 .setContentTitle("User model was added")
                 .setContentText(username + " is now in the database!");
         Notification notification = notificationBuilder.build();
-        startForeground(123, notification);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(NOTIFICATION_SERVICE);
+        notificationManager.notify(0, notification);
     }
 }
