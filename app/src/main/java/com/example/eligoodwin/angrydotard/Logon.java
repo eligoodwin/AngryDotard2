@@ -5,6 +5,7 @@ import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -40,6 +41,7 @@ public class Logon extends AppCompatActivity {
         userDisplay = (TextView) findViewById(R.id.finalUsername);
 
         if(alreadyAuthorized()){
+            loginButton.setVisibility(View.GONE);
             //set user name
             String displayText = "Welcome back, " + session.getUserName();
             userDisplay.setText(displayText);
@@ -92,7 +94,6 @@ public class Logon extends AppCompatActivity {
                 .getSessionManager()
                 .getActiveSession();
         //do we have an active session
-
         return (session != null);
     }
 
