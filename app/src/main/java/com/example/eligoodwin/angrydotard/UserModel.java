@@ -41,7 +41,8 @@ public class UserModel implements Serializable, Parcelable{
         return username;
     }
 
-    public UserModel(String username, List<String >tweets){
+    public UserModel(String username, String userProfilePicUrl, List<String>tweets){
+        this.userProfilePicUrl = userProfilePicUrl;
         this.username = username;
         this.markovTweets = tweets;
     }

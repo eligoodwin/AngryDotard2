@@ -63,9 +63,20 @@ public class SearchForUsers extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        //delete all entries in table
-        sqLiteDatabase.execSQL("DELETE FROM " + DBContract.MarkovContract.TABLE_NAME);
-        sqLiteDatabase.close();
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB  markovUserDB;
+        markovUserDB = new MarkovUserDB(this);
+        try {
+            //delete all entries in table
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
+            sqLiteDatabase.execSQL("DELETE FROM " + MarkovUserDB.TABLE_NAME_1);
+            sqLiteDatabase.execSQL("DELETE FROM " + MarkovUserDB.TABLE_NAME_2);
+            sqLiteDatabase.close();
+        }catch(SQLException e3){
+            e3.printStackTrace();
+        }
+
         //sign out and delete session data
         signOut(SearchForUsers.this);
 
@@ -84,7 +95,6 @@ public class SearchForUsers extends AppCompatActivity {
 
         }catch(SQLException e3){
             e3.printStackTrace();
-
         }
         //get current user name
         currentUserSession = TwitterCore.getInstance()
@@ -172,22 +182,29 @@ public class SearchForUsers extends AppCompatActivity {
     //test if username is in database
     private boolean userIsInDatabase(String username){
         boolean result = false;
-        if(!databaseIsNotEmpty()){
-            return false;
-        }
-        Cursor userSearch = sqLiteDatabase.query(
-                DBContract.MarkovContract.TABLE_NAME,
-                new String[]{DBContract.MarkovContract.COLUMN_NAME_USER_NAME},
-                DBContract.MarkovContract.COLUMN_NAME_USER_NAME + "=?",
-                new String[]{username},
-                null,
-                null,
-                null);
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB  markovUserDB;
+        try {
+            markovUserDB = new MarkovUserDB(this);
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+            Cursor userSearch = sqLiteDatabase.query(
+                    MarkovUserDB.TABLE_NAME_1,
+                    new String[]{MarkovUserDB.COLUMN_NAME_USER_NAME},
+                    MarkovUserDB.COLUMN_NAME_USER_NAME + "=?",
+                    new String[]{username},
+                    null,
+                    null,
+                    null);
 
-        userSearch.moveToFirst();
-        //if count is < 1 user is not in database
-        result = userSearch.getCount() > 0;
-        userSearch.close();
+            userSearch.moveToFirst();
+            //if count is < 1 user is not in database
+            result = userSearch.getCount() > 0;
+            userSearch.close();
+            sqLiteDatabase.close();
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
 
         return result;
     }
@@ -195,15 +212,27 @@ public class SearchForUsers extends AppCompatActivity {
     //is the database empty
     private boolean databaseIsNotEmpty(){
         boolean result = false;
-        String count = "SELECT count(*) FROM " + DBContract.MarkovContract.TABLE_NAME;
-        Cursor userSearch = sqLiteDatabase.rawQuery(count, null);
-        userSearch.moveToFirst();
-        //more than 1 entry in the db?
-        result = userSearch.getInt(0) > 0;
-        userSearch.close();
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB  markovUserDB;
+        try {
+            markovUserDB = new MarkovUserDB(this);
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+            String count = "SELECT count(*) FROM " + MarkovUserDB.TABLE_NAME_1;
+            Cursor userSearch = sqLiteDatabase.rawQuery(count, null);
+            userSearch.moveToFirst();
+            //more than 1 entry in the db?
+            result = userSearch.getInt(0) > 0;
+            userSearch.close();
+            sqLiteDatabase.close();
+        }
+        catch(SQLException e){
+            e.printStackTrace();
+        }
 
         return result;
     }
+
+
     void signOut(Context context){
         //delete the session
         TwitterCore.getInstance()

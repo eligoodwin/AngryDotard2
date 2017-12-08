@@ -5,6 +5,7 @@ import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.support.annotation.Nullable;
@@ -102,18 +103,39 @@ public class GetUserDataIntentService extends IntentService {
         markovUserDB = new MarkovUserDB(this);
         try {
             sqLiteDatabase = markovUserDB.getReadableDatabase();
-            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
+            Log.d(TAG, "Attempting to add new entry: " + sqLiteDatabase.toString());
+            //add user to database
+            vals.put(MarkovUserDB.COLUMN_NAME_USER_NAME, userToAdd.getUsername());
+            vals.put(MarkovUserDB.COLUMN_NAME_PROFILE_URL, userToAdd.getUserProfilePicUrl());
+            sqLiteDatabase.insert(MarkovUserDB.TABLE_NAME_1, null, vals);
+            vals.clear();
+
+            //add their tweets to the database
             List<String> tweetsToAdd = userToAdd.getMarkovTweets();
+            Cursor userCursor = sqLiteDatabase.query(
+                    MarkovUserDB.TABLE_NAME_1,
+                    new String[]{MarkovUserDB.MARKOVED_USER_ID},
+                    MarkovUserDB.COLUMN_NAME_USER_NAME + "=?",
+                    new String[]{userToAdd.getUsername()},
+                    null,
+                    null,
+                    null,
+                    null
+            );
+
+            userCursor.moveToFirst();
+            String userModelID = userCursor.getString(userCursor.getColumnIndex(MarkovUserDB.MARKOVED_USER_ID));
+            userCursor.close();
+
             for(int i = 0; i < tweetsToAdd.size(); ++i){
-                vals.put(DBContract.MarkovContract.COLUMN_NAME_USER_NAME, userToAdd.getUsername());
-                //add the profile pic url
-                vals.put(DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL, userToAdd.getUserProfilePicUrl());
-                vals.put(DBContract.MarkovContract.COLUMN_NAME_TWEET, tweetsToAdd.get(i));
-                sqLiteDatabase.insert(DBContract.MarkovContract.TABLE_NAME, null, vals);
+                vals.put(MarkovUserDB.COLUMN_NAME_TWEET, tweetsToAdd.get(i));
+                vals.put(MarkovUserDB.MARKOVED_USER_ID, userModelID);
+                sqLiteDatabase.insert(MarkovUserDB.TABLE_NAME_2, null, vals);
             }
             sqLiteDatabase.close();
 
         }catch(SQLException e3){
+            Log.d(TAG, "Entry to add failed");
             e3.printStackTrace();
         }
     }

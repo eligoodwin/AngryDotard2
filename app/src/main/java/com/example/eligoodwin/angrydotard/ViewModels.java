@@ -18,13 +18,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ViewModels extends AppCompatActivity {
-    //sql stuff
-    private SQLiteDatabase sqLiteDatabase;
-    private MarkovUserDB markovUserDB;
     private final String TAG = ViewModels.class.getSimpleName();
     ListView listView;
     List<UserModel> userModelList;
-
 
     @Override
     protected void onResume() {
@@ -41,25 +37,14 @@ public class ViewModels extends AppCompatActivity {
         }
     }
 
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_view_models);
         Toast.makeText(this, "Select a modeled user to display their generated tweets by clicking their username", Toast.LENGTH_LONG).show();
-
-        markovUserDB = new MarkovUserDB(this);
-        try {
-            sqLiteDatabase = markovUserDB.getReadableDatabase();
-            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
         //show the results of the table
         populateTable();
     }
-
 
     private void populateTable() {
         userModelList = getModels();
@@ -76,90 +61,113 @@ public class ViewModels extends AppCompatActivity {
     //generate user models from the database
     private List<UserModel> getModels(){
         List<UserModel> userModelList = new ArrayList<>();
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB markovUserDB;
+        try {
+            markovUserDB = new MarkovUserDB(this);
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
 
-        //make query of all entries of db for the unique user names
-        Cursor cursor = sqLiteDatabase.query(true,
-                DBContract.MarkovContract.TABLE_NAME,
-                new String[]{DBContract.MarkovContract._ID,
-                        DBContract.MarkovContract.COLUMN_NAME_USER_NAME},
-                null,
-                null,
-                DBContract.MarkovContract.COLUMN_NAME_USER_NAME,
-                null,
-                null,
-                null);
+            //get all user names into the cursor
+            Cursor userCursor = sqLiteDatabase.query(true,
+                    MarkovUserDB.TABLE_NAME_1,
+                    new String[]{MarkovUserDB.MARKOVED_USER_ID,
+                            MarkovUserDB.COLUMN_NAME_USER_NAME,
+                            MarkovUserDB.COLUMN_NAME_PROFILE_URL
+                    },
+                    null,
+                    null,
+                    MarkovUserDB.COLUMN_NAME_USER_NAME,
+                    null,
+                    null,
+                    null);
+            userCursor.moveToFirst();
 
-        //move cursor to beginning
-        cursor.moveToFirst();
-        //build the new model fromm the database
-        while(!cursor.isAfterLast()){
-            //get the current user name
-            String username = cursor.getString(cursor.getColumnIndex(DBContract.MarkovContract.COLUMN_NAME_USER_NAME)); //<--make a method
-            //get the profile pic
-            String userProfilePicUrl = getUserPicUrl(username);
-            //make a new model, retrieve the tweets first
-            UserModel tempModel = new UserModel(username, getTweets(username));
-            //set the pic turl for the new object
-            tempModel.setUserProiflePicUrl(userProfilePicUrl);
-            //add to the model
-            userModelList.add(tempModel);
-            cursor.moveToNext();
+            //build the new model fromm the database
+            List<String> userTweets = new ArrayList<>();
+            while (!userCursor.isAfterLast()) {
+                //get model id
+                String userModelID = userCursor.getString(userCursor.getColumnIndex(MarkovUserDB.MARKOVED_USER_ID));
+                //get the current user name
+                String username = userCursor.getString(userCursor.getColumnIndex(MarkovUserDB.COLUMN_NAME_USER_NAME));
+                //get the profile pic
+                String userProfilePicUrl = userCursor.getString(userCursor.getColumnIndex(MarkovUserDB.COLUMN_NAME_PROFILE_URL));
+                //make a new model, retrieve the tweets first
+                userTweets = getTweets(userModelID);
+                UserModel tempModel = new UserModel(username, userProfilePicUrl, userTweets);
+                //add to the model
+                userModelList.add(tempModel);
+                userCursor.moveToNext();
+            }
+            userCursor.close();
         }
-        cursor.close();
+        catch(SQLException e){
+            Log.d(TAG, "couldn't make model");
+            e.printStackTrace();
+        }
+
         return userModelList;
     }
 
-    private String getUserPicUrl(String username){
-        String userPicUrl;
-        Cursor cursor = sqLiteDatabase.query(true,
-                DBContract.MarkovContract.TABLE_NAME,
-                new String[]{DBContract.MarkovContract._ID,
-                DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL},
-                DBContract.MarkovContract.COLUMN_NAME_USER_NAME + " =?",
-                new String[]{username},
-                DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL,
-                null,
-                null,
-                null);
-
-        cursor.moveToFirst();
-        userPicUrl = cursor.getString(cursor.getColumnIndex(DBContract.MarkovContract.COLUMN_NAME_PROFILE_URL));
-        cursor.close();
-        return userPicUrl;
-    }
 
 
-    private List<String> getTweets(String username){
+    private List<String> getTweets(String userModelId){
         List<String> userTweets = new ArrayList<>();
-        //get all the tweeets by a user
-        Cursor cursor = sqLiteDatabase.query(
-                DBContract.MarkovContract.TABLE_NAME,
-                new String[]{DBContract.MarkovContract._ID,
-                        DBContract.MarkovContract.COLUMN_NAME_TWEET},
-                DBContract.MarkovContract.COLUMN_NAME_USER_NAME + " =?",
-                new String[]{username},
-                null,
-                null,
-                null);
-        cursor.moveToFirst();
-        //populate list with tweets
-        while(!cursor.isAfterLast()) {
-            userTweets.add(cursor.getString(cursor.getColumnIndex(DBContract.MarkovContract.COLUMN_NAME_TWEET)));
-            cursor.moveToNext();
+        //get all the tweeets by a user ID
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB markovUserDB;
+
+        markovUserDB = new MarkovUserDB(this);
+        try {
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+
+            Cursor tweetCursor = sqLiteDatabase.query(
+                    MarkovUserDB.TABLE_NAME_2,
+                    new String[]{MarkovUserDB.COLUMN_NAME_TWEET},
+                    MarkovUserDB.MARKOVED_USER_ID + "=?",
+                    new String[]{userModelId},
+                    null,
+                    null,
+                    null,
+                    null);
+
+            //tweetCursor = sqLiteDatabase.rawQuery("SELECT " + MarkovUserDB.COLUMN_NAME_TWEET+
+            //        " FROM " + MarkovUserDB.TABLE_NAME_2 + " WHERE " + MarkovUserDB.MARKOVED_USER_ID +"=?", new String[]{userModelId});
+            //move cursor to beginning
+            tweetCursor.moveToFirst();
+
+            while(!tweetCursor.isAfterLast()){
+                //add the tweet for the target user
+                userTweets.add(tweetCursor.getString(tweetCursor.getColumnIndex(MarkovUserDB.COLUMN_NAME_TWEET)));
+                tweetCursor.moveToNext();
+            }
+            tweetCursor.close();
+            sqLiteDatabase.close();
+        } catch(SQLException e){
+            Log.d(TAG, "failure to get tweets");
+            e.printStackTrace();
         }
-        cursor.close();
         return userTweets;
     }
 
     private boolean databaseIsNotEmpty(){
         boolean result = false;
-        String count = "SELECT count(*) FROM " + DBContract.MarkovContract.TABLE_NAME;
-        Cursor userSearch = sqLiteDatabase.rawQuery(count, null);
-        userSearch.moveToFirst();
+        SQLiteDatabase sqLiteDatabase;
+        MarkovUserDB markovUserDB;
+        markovUserDB = new MarkovUserDB(this);
+        try {
+            String count = "SELECT count(*) FROM " + MarkovUserDB.TABLE_NAME_1;
+            sqLiteDatabase = markovUserDB.getReadableDatabase();
+            Cursor userSearch = sqLiteDatabase.rawQuery(count, null);
+            userSearch.moveToFirst();
 
-        //more than 1 entry in the db?
-        result = userSearch.getInt(0) > 0;
-        userSearch.close();
+            //more than 1 entry in the db?
+            result = userSearch.getInt(0) > 0;
+            userSearch.close();
+            sqLiteDatabase.close();
+        }catch (SQLException e){
+            Log.d(TAG, "Could not query if database was empty");
+            e.printStackTrace();
+        }
         return result;
     }
 

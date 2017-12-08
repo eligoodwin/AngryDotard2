@@ -24,7 +24,7 @@ public class DisplayMarkovTweets extends AppCompatActivity {
     private ListView listView;
     private UserModel selectedUser;
     private TextView displayUserName;
-    private String username;
+    //private String username;
     private ImageView userProfilePic;
 
 
@@ -48,6 +48,7 @@ public class DisplayMarkovTweets extends AppCompatActivity {
             Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
             deleteUser(sqLiteDatabase);
             databaseIsNotEmpty = databaseIsNotEmpty(sqLiteDatabase);
+            sqLiteDatabase.close();
         }catch(SQLException e3){
             e3.printStackTrace();
         }
@@ -63,6 +64,7 @@ public class DisplayMarkovTweets extends AppCompatActivity {
             Intent returnToSearchForUsers = new Intent(DisplayMarkovTweets.this, SearchForUsers.class);
             startActivity(returnToSearchForUsers);
         }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -78,8 +80,8 @@ public class DisplayMarkovTweets extends AppCompatActivity {
         userProfilePic = (ImageView)findViewById(R.id.displayUserProfilePic);
         Picasso.with(this).load(selectedUser.getUserProfilePicUrl()).into(userProfilePic);
 
-        username = selectedUser.getUsername();
-        displayUserName.setText(username);
+
+        displayUserName.setText(selectedUser.getUsername());
         populateTable();
     }
 
@@ -98,7 +100,7 @@ public class DisplayMarkovTweets extends AppCompatActivity {
 
     private boolean databaseIsNotEmpty(SQLiteDatabase sqLiteDatabase){
         boolean result = false;
-        String count = "SELECT count(*) FROM " + DBContract.MarkovContract.TABLE_NAME;
+        String count = "SELECT count(*) FROM " + MarkovUserDB.TABLE_NAME_1;
         Cursor userSearch = sqLiteDatabase.rawQuery(count, null);
         userSearch.moveToFirst();
         //more than 1 entry in the db?
@@ -108,7 +110,8 @@ public class DisplayMarkovTweets extends AppCompatActivity {
     }
 
     private void deleteUser(SQLiteDatabase sqLiteDatabase){
-        sqLiteDatabase.delete(DBContract.MarkovContract.TABLE_NAME, DBContract.MarkovContract.COLUMN_NAME_USER_NAME +"=?",
-                new String[]{username});
+        sqLiteDatabase.delete(MarkovUserDB.TABLE_NAME_1, MarkovUserDB.COLUMN_NAME_USER_NAME +"=?",
+                new String[]{selectedUser.getUsername()});
     }
+
 }
