@@ -42,7 +42,7 @@ class MarkovUserDB extends SQLiteOpenHelper {
 
 
     public MarkovUserDB(Context context){
-        super(context, DBContract.MarkovContract.DB_Name, null, DBContract.MarkovContract.DB_VERSION);
+        super(context, DB_Name, null, DB_VERSION);
     }
 
     @Override
