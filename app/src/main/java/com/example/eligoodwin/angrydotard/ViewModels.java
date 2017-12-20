@@ -129,10 +129,6 @@ public class ViewModels extends AppCompatActivity {
                     null,
                     null,
                     null);
-
-            //tweetCursor = sqLiteDatabase.rawQuery("SELECT " + MarkovUserDB.COLUMN_NAME_TWEET+
-            //        " FROM " + MarkovUserDB.TABLE_NAME_2 + " WHERE " + MarkovUserDB.MARKOVED_USER_ID +"=?", new String[]{userModelId});
-            //move cursor to beginning
             tweetCursor.moveToFirst();
 
             while(!tweetCursor.isAfterLast()){
@@ -140,12 +136,14 @@ public class ViewModels extends AppCompatActivity {
                 userTweets.add(tweetCursor.getString(tweetCursor.getColumnIndex(MarkovUserDB.COLUMN_NAME_TWEET)));
                 tweetCursor.moveToNext();
             }
+
             tweetCursor.close();
             sqLiteDatabase.close();
         } catch(SQLException e){
             Log.d(TAG, "failure to get tweets");
             e.printStackTrace();
         }
+
         return userTweets;
     }
 

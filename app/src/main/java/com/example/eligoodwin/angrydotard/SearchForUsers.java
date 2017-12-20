@@ -51,10 +51,6 @@ public class SearchForUsers extends AppCompatActivity {
     private String targetUsername;
     private TwitterSession currentUserSession;
 
-    //set up db
-    private SQLiteDatabase sqLiteDatabase;
-    private MarkovUserDB  markovUserDB;
-
     @Override
     public boolean onCreateOptionsMenu(Menu menu){
         MenuItem menuItem = menu.add("Sign out");
@@ -87,15 +83,7 @@ public class SearchForUsers extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_search_for_users);
-        //init database
-        markovUserDB = new MarkovUserDB(this);
-        try {
-            sqLiteDatabase = markovUserDB.getReadableDatabase();
-            Log.d(TAG, "SQLite info: " + sqLiteDatabase.toString());
 
-        }catch(SQLException e3){
-            e3.printStackTrace();
-        }
         //get current user name
         currentUserSession = TwitterCore.getInstance()
                 .getSessionManager()
